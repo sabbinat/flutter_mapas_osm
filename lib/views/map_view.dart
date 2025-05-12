@@ -39,8 +39,6 @@ class _MapViewState extends State<MapView> {
     _searchController = TextEditingController();
     _mapController = MapController();
 
-
-    // Llama a fetchLocation y actualiza _currentPosition si es necesario
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final locationViewModel = Provider.of<LocationViewModel>(
           context, listen: false);
@@ -92,7 +90,7 @@ class _MapViewState extends State<MapView> {
   @override
   void dispose() {
     _positionStream
-        .cancel(); // Cancelar la suscripción cuando el widget se destruye
+        .cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -102,15 +100,12 @@ class _MapViewState extends State<MapView> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Verifica si el servicio de ubicación está habilitado
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // Si los servicios de ubicación no están habilitados, muestra un mensaje o redirige
       print('Servicios de ubicación deshabilitados');
       return;
     }
 
-    // Verifica el estado de los permisos
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       // Si el permiso está denegado, pide permiso
@@ -123,12 +118,10 @@ class _MapViewState extends State<MapView> {
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // Si el permiso está denegado permanentemente, muestra un mensaje
       print('Permiso de ubicación denegado permanentemente');
       return;
     }
 
-    // Ahora que tenemos permisos, podemos proceder con la obtención de la ubicación
     Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
     setState(() {
