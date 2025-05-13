@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/location_viewmodel.dart';
@@ -16,9 +15,9 @@ class MapView extends StatefulWidget {
 
 class _MapViewState extends State<MapView> {
   late TextEditingController _searchController;
+  late final MapController _mapController;
   late Position _currentPosition;
   late StreamSubscription<Position> _positionStream;
-  late final MapController _mapController;
   LatLng? _searchedLocation;
 
 
@@ -39,9 +38,21 @@ class _MapViewState extends State<MapView> {
     _searchController = TextEditingController();
     _mapController = MapController();
 
+    _currentPosition = Position(
+      latitude: 0.0,
+      longitude: 0.0,
+      timestamp: DateTime.now(),
+      accuracy: 10.0,
+      altitude: 0.0,
+      heading: 0.0,
+      speed: 0.0,
+      altitudeAccuracy: 10.0,
+      headingAccuracy: 10.0,
+      speedAccuracy: 10.0,
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final locationViewModel = Provider.of<LocationViewModel>(
-          context, listen: false);
+      final locationViewModel = Provider.of<LocationViewModel>(context, listen: false);
       await locationViewModel.fetchLocation();
 
       if (locationViewModel.location != null) {
@@ -61,19 +72,6 @@ class _MapViewState extends State<MapView> {
         });
       }
     });
-
-    _currentPosition = Position(
-      latitude: 0.0,
-      longitude: 0.0,
-      timestamp: DateTime.now(),
-      accuracy: 10.0,
-      altitude: 0.0,
-      heading: 0.0,
-      speed: 0.0,
-      altitudeAccuracy: 10.0,
-      headingAccuracy: 10.0,
-      speedAccuracy: 10.0,
-    );
 
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
@@ -95,69 +93,17 @@ class _MapViewState extends State<MapView> {
     super.dispose();
   }
 
-  // Función para verificar y solicitar permisos de ubicación
-  Future<void> _checkPermissions() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      print('Servicios de ubicación deshabilitados');
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      // Si el permiso está denegado, pide permiso
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        // Si el permiso sigue denegado, muestra un mensaje
-        print('Permiso de ubicación denegado');
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      print('Permiso de ubicación denegado permanentemente');
-      return;
-    }
-
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-    setState(() {
-      _currentPosition = position;
-    });
-  }
-
   Future<void> _searchAddress() async {
-    try {
-      List<Location> locations = await locationFromAddress(_searchController.text);
-      if (locations.isNotEmpty) {
-        final location = locations.first;
-        final newPosition = Position(
-          latitude: location.latitude,
-          longitude: location.longitude,
-          timestamp: DateTime.now(),
-          accuracy: 10.0,
-          altitude: 0.0,
-          heading: 0.0,
-          speed: 0.0,
-          altitudeAccuracy: 10.0,
-          headingAccuracy: 10.0,
-          speedAccuracy: 10.0,
-        );
+    final viewModel = Provider.of<LocationViewModel>(context, listen: false);
+    final newLocation = await viewModel.searchAddress(_searchController.text);
 
-        setState(() {
-          _searchedLocation = LatLng(location.latitude, location.longitude);
-        });
-
-        _mapController.move(_searchedLocation!, 16.0);
-
-      } else {
-        _showSnackBar('Dirección no encontrada.');
-      }
-    } catch (e) {
-      _showSnackBar('Error al buscar dirección.');
+    if (newLocation != null) {
+      setState(() {
+        _searchedLocation = newLocation;
+      });
+      _mapController.move(newLocation, 16.0);
+    } else {
+      _showSnackBar('Dirección no encontrada.');
     }
   }
 

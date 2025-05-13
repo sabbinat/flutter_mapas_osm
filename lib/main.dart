@@ -7,8 +7,8 @@ import 'views/map_view.dart';
 void main() {
 
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent, // Hace la barra de estado transparente
-    statusBarIconBrightness: Brightness.light, // Para íconos de barra claros si lo prefieres
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
   ));
 
   runApp(
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Mapa OSM',
+      title: 'Mapa',
       theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.teal),
       debugShowCheckedModeBanner: false,
       home: Scaffold(
